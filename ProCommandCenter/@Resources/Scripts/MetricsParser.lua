@@ -93,10 +93,17 @@ local function simplifyFanName(name, index)
     return name
 end
 
+local function setDiskVisibility(index, visible)
+    local hidden = visible and "0" or "1"
+    SKIN:Bang("!SetOption", "MeterDisk" .. index, "Hidden", hidden)
+    SKIN:Bang("!SetOption", "MeterDisk" .. index .. "Bar", "Hidden", hidden)
+end
+
 local function resetDefaults()
     setVar("CpuUsage", "N/A")
     setVar("CpuTemp", "N/A")
-    setVar("CpuCoreLines", "No per-core usage metrics")
+    setVar("CpuCoreLinesLeft", "No per-core usage metrics")
+    setVar("CpuCoreLinesRight", "")
 
     setVar("GpuName", "NVIDIA GeForce RTX 4080 SUPER")
     setVar("GpuUsage", "N/A")
@@ -105,11 +112,10 @@ local function resetDefaults()
     setVar("MemoryLine", "N/A")
     setVar("MemoryPercent", "0")
 
-    setVar("DiskSummary", "No disk metrics")
     for i = 1, 4 do
-        setVar("Disk" .. i .. "Name", "")
         setVar("Disk" .. i .. "Line", "")
         setVar("Disk" .. i .. "Percent", "0")
+        setDiskVisibility(i, false)
     end
 
     setVar("NetworkLine", "Ethernet: DL N/A | UL N/A")
@@ -137,8 +143,8 @@ local function parseCpu(cpuBlock)
         return ka < kb
     end)
 
+    local maxLines = tonumber(SKIN:ReplaceVariables("#MaxCoreLines#")) or 16
     local lines = {}
-    local maxLines = tonumber(SKIN:ReplaceVariables("#MaxCoreLines#")) or 12
     for i, c in ipairs(usages) do
         lines[#lines + 1] = string.format("%s: %s", c.name, formatNumber(c.value, 0, "%"))
         if i >= maxLines then
@@ -147,10 +153,23 @@ local function parseCpu(cpuBlock)
     end
 
     if #lines == 0 then
-        lines[1] = "No per-core usage metrics"
+        setVar("CpuCoreLinesLeft", "No per-core usage metrics")
+        setVar("CpuCoreLinesRight", "")
+        return
     end
 
-    setVar("CpuCoreLines", table.concat(lines, "#CRLF#"))
+    local left, right = {}, {}
+    local splitAt = math.ceil(#lines / 2)
+    for i, line in ipairs(lines) do
+        if i <= splitAt then
+            left[#left + 1] = line
+        else
+            right[#right + 1] = line
+        end
+    end
+
+    setVar("CpuCoreLinesLeft", table.concat(left, "#CRLF#"))
+    setVar("CpuCoreLinesRight", table.concat(right, "#CRLF#"))
 end
 
 local function parseGpu(allText)
@@ -200,38 +219,38 @@ end
 
 local function parseDisks(allText)
     local diskArray = allText:match('"disks"%s*:%s*(%b[])')
-    local lines = {}
     local index = 0
 
     if diskArray then
         for obj in diskArray:gmatch("%b{}") do
+            if index >= 4 then
+                break
+            end
+
+            index = index + 1
             local name = stringFrom(obj, "name") or stringFrom(obj, "mountPoint") or "Disk"
             local total = numberFrom(obj, "totalGB")
             local used = numberFrom(obj, "usedGB")
             local free = numberFrom(obj, "freeGB")
             local percent = numberFrom(obj, "usagePercent")
 
-            lines[#lines + 1] = string.format("%s %s", name, formatNumber(percent, 0, "%"))
-
-            if index < 4 then
-                index = index + 1
-                setVar("Disk" .. index .. "Name", name)
-                setVar("Disk" .. index .. "Line", string.format("T %s  U %s  F %s", formatNumber(total, 0, "GB"), formatNumber(used, 0, "GB"), formatNumber(free, 0, "GB")))
-                setVar("Disk" .. index .. "Percent", percent or 0)
-            end
+            setVar("Disk" .. index .. "Line", string.format(
+                "%s | T %s U %s F %s | %s",
+                name,
+                formatNumber(total, 0, "GB"),
+                formatNumber(used, 0, "GB"),
+                formatNumber(free, 0, "GB"),
+                formatNumber(percent, 0, "%")
+            ))
+            setVar("Disk" .. index .. "Percent", percent or 0)
+            setDiskVisibility(index, true)
         end
     end
 
-    if #lines == 0 then
-        setVar("DiskSummary", "No disk metrics")
-    else
-        setVar("DiskSummary", table.concat(lines, " | "))
-    end
-
     for i = index + 1, 4 do
-        setVar("Disk" .. i .. "Name", "")
         setVar("Disk" .. i .. "Line", "")
         setVar("Disk" .. i .. "Percent", "0")
+        setDiskVisibility(i, false)
     end
 end
 
@@ -294,10 +313,12 @@ function Update()
     resetDefaults()
 
     if not jsonText then
-        setVar("CpuCoreLines", "metrics.json not found")
+        setVar("CpuCoreLinesLeft", "metrics.json not found")
+        setVar("CpuCoreLinesRight", "")
         setVar("MemoryLine", "metrics.json not found")
-        setVar("DiskSummary", "metrics.json not found")
         setVar("NetworkLine", "metrics.json not found")
+        SKIN:Bang("!UpdateMeterGroup", "DiskRows")
+        SKIN:Bang("!Redraw")
         return 0
     end
 
@@ -308,5 +329,7 @@ function Update()
     parseNetwork(jsonText)
     parseFans(jsonText)
 
+    SKIN:Bang("!UpdateMeterGroup", "DiskRows")
+    SKIN:Bang("!Redraw")
     return 1
 end
