@@ -17,7 +17,7 @@ A clean, premium-style, dual-monitor-friendly dashboard with independent modules
   - CPU total usage + per-core usage + CPU temperature
   - GPU (`NVIDIA GeForce RTX 4080 SUPER`) core usage + temperature
   - Memory total/used/available/usage percent
-  - Per-disk total/used/free/usage percent with auto-hidden unused disk rows
+  - Per-disk total/used/free/usage percent with auto-hidden unused disk rows and GB/TB formatting
   - Ethernet upload/download throughput (normalized KB/s or MB/s)
   - Fan list with simplified names and RPM status coloring (<1000 black, >=1000 green)
 - `SystemSpecs.ini`

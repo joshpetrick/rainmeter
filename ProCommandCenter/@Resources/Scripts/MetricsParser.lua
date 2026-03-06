@@ -59,6 +59,35 @@ local function formatBytesPerSec(value)
     return string.format("%.0f B/s", value)
 end
 
+
+local function clampPercent(value)
+    if value == nil then
+        return 0
+    end
+
+    if value < 0 then
+        return 0
+    end
+
+    if value > 100 then
+        return 100
+    end
+
+    return value
+end
+
+local function formatStorageFromGB(value)
+    if value == nil then
+        return "N/A"
+    end
+
+    if value >= 1024 then
+        return string.format("%.2f TB", value / 1024)
+    end
+
+    return string.format("%.0f GB", value)
+end
+
 local function parseNamedValueArray(arrayText)
     local items = {}
     if not arrayText then
@@ -96,6 +125,7 @@ end
 local function setDiskVisibility(index, visible)
     local hidden = visible and "0" or "1"
     SKIN:Bang("!SetOption", "MeterDisk" .. index, "Hidden", hidden)
+    SKIN:Bang("!SetOption", "MeterDisk" .. index .. "BarBack", "Hidden", hidden)
     SKIN:Bang("!SetOption", "MeterDisk" .. index .. "Bar", "Hidden", hidden)
 end
 
@@ -214,7 +244,7 @@ local function parseMemory(memoryBlock)
         formatNumber(available and (available / 1024), 1, ""),
         formatNumber(percent, 0, "%")
     ))
-    setVar("MemoryPercent", percent or 0)
+    setVar("MemoryPercent", clampPercent(percent))
 end
 
 local function parseDisks(allText)
@@ -237,12 +267,12 @@ local function parseDisks(allText)
             setVar("Disk" .. index .. "Line", string.format(
                 "%s | T %s U %s F %s | %s",
                 name,
-                formatNumber(total, 0, "GB"),
-                formatNumber(used, 0, "GB"),
-                formatNumber(free, 0, "GB"),
+                formatStorageFromGB(total),
+                formatStorageFromGB(used),
+                formatStorageFromGB(free),
                 formatNumber(percent, 0, "%")
             ))
-            setVar("Disk" .. index .. "Percent", percent or 0)
+            setVar("Disk" .. index .. "Percent", clampPercent(percent))
             setDiskVisibility(index, true)
         end
     end
