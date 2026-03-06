@@ -7,11 +7,23 @@ namespace RainmeterCollector.Utils;
 /// </summary>
 public sealed class JsonFileWriter
 {
-    private readonly JsonSerializerOptions _jsonOptions = new()
+    private readonly JsonSerializerOptions _jsonOptions = CreateJsonOptions();
+
+    private static JsonSerializerOptions CreateJsonOptions()
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = true
-    };
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true
+        };
+
+        options.Converters.Add(new NullableFloatNonFiniteToNullConverter());
+        options.Converters.Add(new NullableDoubleNonFiniteToNullConverter());
+        options.Converters.Add(new FloatNonFiniteToNullConverter());
+        options.Converters.Add(new DoubleNonFiniteToNullConverter());
+
+        return options;
+    }
 
     public async Task WriteAtomicAsync<T>(string outputPath, T payload, CancellationToken cancellationToken = default)
     {

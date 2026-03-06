@@ -90,4 +90,5 @@ For a future Rainmeter skin/module:
 
 - Sensor availability depends on motherboard, drivers, and privileges.
 - Missing sensors are handled gracefully (`null`/omitted behavior).
+- Non-finite sensor values (`NaN`, `Infinity`) are serialized as `null` to keep JSON valid.
 - Mapping rules are centralized in `HardwareSensorService` to make extension easy.
