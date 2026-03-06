@@ -2,13 +2,13 @@
 
 This repository contains a Rainmeter skin that displays:
 
-- CPU usage
-- RAM usage (used/total and percentage)
-- C: drive free/total capacity
+- CPU usage with a live progress bar
+- RAM usage (used/total and percentage) with a live progress bar
+- C: drive free/total capacity with a live usage bar
 - Network download and upload speed
 - System uptime
 - Predefined stock watchlist prices (3 symbols)
-- Current weather summary
+- Current weather with location, icon, and temperature
 
 ## Install
 
@@ -52,9 +52,17 @@ Examples:
 - `WeatherLocation=London`
 - `WeatherLocation=Tokyo`
 
-The weather line is pulled from `wttr.in` and refreshes automatically.
+The weather line is pulled from `wttr.in` and refreshes automatically with location, icon, temperature, and condition.
 
 ## Notes
 
 - You can change the monitored disk by editing `Drive=C:` in disk measures.
 - Stock prices are fetched from Yahoo Finance's public quote endpoint.
+
+
+## Recent UI updates
+
+- Added compact progress bars for CPU, RAM, and Disk so activity is easier to read at a glance.
+- CPU readout now uses one decimal place and light averaging to avoid showing constant `0%` from integer rounding.
+- RAM and Disk capacity readouts now use explicit byte-to-GB conversion, so they consistently display true GB values.
+- Weather now displays location + icon + temperature + condition from wttr.in.
