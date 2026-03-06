@@ -28,7 +28,7 @@ A clean, premium-style, dual-monitor-friendly dashboard with independent modules
 - `Stocks.ini`
   - Minimal watchlist close prices via Stooq CSV
 - `Dashboard.ini`
-  - Launcher for loading / unloading / toggling modules
+  - Launcher for loading / unloading modules independently
 
 ### Folder structure
 
@@ -48,7 +48,7 @@ ProCommandCenter/
 1. Copy `ProCommandCenter` into `Documents\Rainmeter\Skins`.
 2. Refresh Rainmeter.
 3. Load `ProCommandCenter\Dashboard.ini`.
-4. Use launcher controls to enable only modules you want.
+4. Use launcher controls (Load / Unload per module) to enable only what you want.
 
 ### Required plugin for temperatures and GPU usage
 
