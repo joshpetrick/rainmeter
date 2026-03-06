@@ -74,3 +74,14 @@ Edit `ProCommandCenter/@Resources/Variables.inc` to tune:
 - Defaults are tuned for right-side stacking on a dual 1440p layout.
 - All modules are independent and can be loaded individually.
 - Weather and stock endpoints are lightweight public sources and may be delayed.
+
+---
+
+## RainmeterCollector (external metrics writer)
+
+This repo now also includes `RainmeterCollector/`, a .NET 8 Windows x64 console collector that writes hardware/system metrics to JSON for Rainmeter consumption.
+
+See:
+
+- `RainmeterCollector/README.md`
+- `RainmeterCollector/samples/metrics.sample.json`
