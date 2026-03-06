@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using RainmeterCollector.Configuration;
 using RainmeterCollector.Services;
 using RainmeterCollector.Utils;
+using System.Runtime.InteropServices;
 
 var configuration = new ConfigurationBuilder()
     .SetBasePath(AppContext.BaseDirectory)
@@ -11,6 +12,13 @@ var configuration = new ConfigurationBuilder()
     .Build();
 
 var options = configuration.GetSection("Collector").Get<CollectorOptions>() ?? new CollectorOptions();
+
+
+var runHiddenFromArgs = args.Any(a => a.Equals("--hidden", StringComparison.OrdinalIgnoreCase));
+if (options.RunHidden || runHiddenFromArgs)
+{
+    ConsoleWindowHider.Hide();
+}
 
 using var loggerFactory = LoggerFactory.Create(builder =>
 {
@@ -62,4 +70,24 @@ catch (Exception ex)
 {
     logger.LogError(ex, "Collector crashed unexpectedly.");
     Environment.ExitCode = 1;
+}
+
+internal static class ConsoleWindowHider
+{
+    private const int SwHide = 0;
+
+    [DllImport("kernel32.dll")]
+    private static extern nint GetConsoleWindow();
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(nint hWnd, int nCmdShow);
+
+    public static void Hide()
+    {
+        var handle = GetConsoleWindow();
+        if (handle != 0)
+        {
+            _ = ShowWindow(handle, SwHide);
+        }
+    }
 }

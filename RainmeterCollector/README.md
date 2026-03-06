@@ -77,11 +77,12 @@ dotnet publish .\src\RainmeterCollector\RainmeterCollector.csproj -c Release -r 
 5. **Actions** tab:
    - Action: **Start a program**
    - Program/script: `C:\Path\To\RainmeterCollector\publish\RainmeterCollector.exe`
+   - Add arguments: `--hidden`
    - Start in: `C:\Path\To\RainmeterCollector\publish`
 6. **Settings** tab:
    - Enable restart/retry behavior if desired.
 
-This keeps the collector running automatically each boot/logon and is usually enough for Rainmeter dashboards.
+This keeps the collector running automatically each boot/logon and is usually enough for Rainmeter dashboards. With `--hidden`, no visible console window is shown to the user.
 
 ### Option B (background service): Windows Service
 
@@ -107,6 +108,8 @@ You can also place a shortcut to the collector EXE in:
 
 `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup`
 
+If using this option, create a shortcut that launches with argument `--hidden`.
+
 This is simple but less robust than Task Scheduler.
 
 ## Configuration
@@ -121,7 +124,8 @@ Edit `src/RainmeterCollector/appsettings.json`:
     "EnableRawSensorDump": true,
     "EnableConsoleLogging": true,
     "EnableDebugSensorDump": false,
-    "DebugSensorDumpPath": "C:\\RainmeterCollector\\sensors-debug.json"
+    "DebugSensorDumpPath": "C:\\RainmeterCollector\\sensors-debug.json",
+    "RunHidden": false
   }
 }
 ```
@@ -129,6 +133,7 @@ Edit `src/RainmeterCollector/appsettings.json`:
 ## Debug mode
 
 Set `EnableDebugSensorDump` to `true` to generate a sensor discovery file at `DebugSensorDumpPath` every cycle.
+Set `RunHidden` to `true` if you always want the process to hide the console window (equivalent to passing `--hidden`).
 This file includes each sensor's hardware name/type, sensor name/type, current value, and min/max values.
 
 ## Rainmeter integration idea

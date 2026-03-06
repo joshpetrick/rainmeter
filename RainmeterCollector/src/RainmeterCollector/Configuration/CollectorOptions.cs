@@ -8,4 +8,5 @@ public sealed class CollectorOptions
     public bool EnableConsoleLogging { get; set; } = true;
     public bool EnableDebugSensorDump { get; set; } = false;
     public string DebugSensorDumpPath { get; set; } = @"C:\RainmeterCollector\sensors-debug.json";
+    public bool RunHidden { get; set; } = false;
 }
