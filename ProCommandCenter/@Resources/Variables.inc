@@ -60,15 +60,8 @@ SpecMonitor=2560 x 1440 (x2)
 SpecStorage=NVMe 2 TB + SSD 2 TB
 
 ; ---------- Dynamic source configuration ----------
-; HWiNFO plugin required for CPU/GPU temperatures and GPU usage.
-; Plugin download: https://www.hwinfo.com/add-ons/
-; Replace IDs below with your own HWiNFO shared-memory sensor IDs.
-HWiNFOCpuTempSensorId=0xf0000100
-HWiNFOCpuTempEntryId=1
-HWiNFOGpuUsageSensorId=0xf0000200
-HWiNFOGpuUsageEntryId=2
-HWiNFOGpuTempSensorId=0xf0000200
-HWiNFOGpuTempEntryId=3
+; RainmeterCollector JSON output path (written by the collector service/app).
+MetricsJsonPath=C:\RainmeterCollector\metrics.json
 
 PrimaryDrive=C:
 
