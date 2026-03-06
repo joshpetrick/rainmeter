@@ -1,60 +1,76 @@
-# Rainmeter PC Stats Skin
+# Rainmeter Skins
 
-This repository contains a Rainmeter skin that displays:
+This repository includes a modular Rainmeter dashboard focused on a polished, minimal, dark desktop aesthetic.
 
-- CPU usage
-- RAM usage (used/total and percentage)
-- C: drive free/total capacity
-- Network download and upload speed
-- System uptime
-- Predefined stock watchlist prices (3 symbols)
-- Current weather summary
+## Included skins
 
-## Install
+- `PCStats` (legacy single-panel skin)
+- `ProCommandCenter` (modular professional dashboard)
 
-1. Copy the `PCStats` folder to your Rainmeter skins directory (typically `Documents\\Rainmeter\\Skins`).
-2. In Rainmeter, click **Refresh all**.
-3. Load `PCStats.ini` from the `PCStats` skin.
+---
 
-## Customize
+## ProCommandCenter
 
-Open `PCStats/PCStats.ini` and edit values in `[Variables]`:
+A clean, premium-style, dual-monitor-friendly dashboard with independent modules:
 
-- `FontName`
-- `FontColor`
-- `AccentColor`
-- `Padding`
-- `LineHeight`
+- `SystemStats.ini`
+  - CPU usage
+  - CPU temperature (HWiNFO)
+  - GPU usage (HWiNFO)
+  - GPU temperature (HWiNFO)
+  - RAM usage
+  - Primary drive usage
+  - Network throughput
+- `SystemSpecs.ini`
+  - Static hardware summary (editable)
+- `Weather.ini`
+  - Temperature, condition, and high/low via `wttr.in`
+- `Stocks.ini`
+  - Minimal watchlist close prices via Stooq CSV
+- `Dashboard.ini`
+  - Launcher for loading / unloading modules independently
 
-### Stock list
+### Folder structure
 
-The skin includes a predefined 3-item watchlist.
-
-- Labels: `Stock1Label`, `Stock2Label`, `Stock3Label`
-- Data symbols query: `StockSymbols`
-
-Example:
-
-```ini
-Stock1Label=AAPL
-Stock2Label=MSFT
-Stock3Label=NVDA
-StockSymbols=AAPL,MSFT,NVDA
+```text
+ProCommandCenter/
+├─ Dashboard.ini
+├─ SystemStats.ini
+├─ SystemSpecs.ini
+├─ Weather.ini
+├─ Stocks.ini
+└─ @Resources/
+   └─ Variables.inc
 ```
 
-### Weather
+### Install
 
-Set your location using URL-escaped text in `WeatherLocation`.
+1. Copy `ProCommandCenter` into `Documents\Rainmeter\Skins`.
+2. Refresh Rainmeter.
+3. Load `ProCommandCenter\Dashboard.ini`.
+4. Use launcher controls (Load / Unload per module) to enable only what you want.
 
-Examples:
+### Required plugin for temperatures and GPU usage
 
-- `WeatherLocation=New%20York`
-- `WeatherLocation=London`
-- `WeatherLocation=Tokyo`
+`SystemStats.ini` is prepared for the **HWiNFO Rainmeter Plugin**.
 
-The weather line is pulled from `wttr.in` and refreshes automatically.
+- Plugin: <https://www.hwinfo.com/add-ons/>
+- Configure sensor IDs in:
+  - `ProCommandCenter/@Resources/Variables.inc`
 
-## Notes
+### Primary customization
 
-- You can change the monitored disk by editing `Drive=C:` in disk measures.
-- Stock prices are fetched from Yahoo Finance's public quote endpoint.
+Edit `ProCommandCenter/@Resources/Variables.inc` to tune:
+
+- Theme colors and typography
+- Spacing and panel dimensions
+- Module positions (`PosStatsX`, `PosSpecsX`, etc.)
+- Static spec labels (`SpecCPU`, `SpecGPU`, etc.)
+- Weather location (`WeatherLocation`)
+- Stock symbols (`Stock1Symbol` ... `Stock4Symbol`)
+
+### Notes
+
+- Defaults are tuned for right-side stacking on a dual 1440p layout.
+- All modules are independent and can be loaded individually.
+- Weather and stock endpoints are lightweight public sources and may be delayed.
