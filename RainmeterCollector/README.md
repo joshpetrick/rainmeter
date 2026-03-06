@@ -50,6 +50,65 @@ Default output path:
 
 `C:\RainmeterCollector\metrics.json`
 
+
+## Run automatically at Windows startup
+
+You have two good options:
+
+### Option A (recommended for personal desktop): Task Scheduler
+
+This is usually the easiest and most reliable for a user-session app.
+
+1. Publish a self-contained executable (optional but convenient):
+
+```powershell
+cd RainmeterCollector
+
+dotnet publish .\src\RainmeterCollector\RainmeterCollector.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o .\publish
+```
+
+2. Open **Task Scheduler** → **Create Task...**
+3. **General** tab:
+   - Name: `RainmeterCollector`
+   - Select **Run whether user is logged on or not** (or only when logged on if preferred)
+   - Check **Run with highest privileges**
+4. **Triggers** tab:
+   - Add trigger **At log on** (or **At startup**)
+5. **Actions** tab:
+   - Action: **Start a program**
+   - Program/script: `C:\Path\To\RainmeterCollector\publish\RainmeterCollector.exe`
+   - Start in: `C:\Path\To\RainmeterCollector\publish`
+6. **Settings** tab:
+   - Enable restart/retry behavior if desired.
+
+This keeps the collector running automatically each boot/logon and is usually enough for Rainmeter dashboards.
+
+### Option B (background service): Windows Service
+
+If you want true service behavior, use NSSM (Non-Sucking Service Manager) to host the EXE as a service.
+
+1. Install NSSM.
+2. From elevated terminal:
+
+```powershell
+nssm install RainmeterCollector "C:\Path\To\RainmeterCollector\publish\RainmeterCollector.exe"
+nssm set RainmeterCollector AppDirectory "C:\Path\To\RainmeterCollector\publish"
+sc.exe config RainmeterCollector start= auto
+sc.exe start RainmeterCollector
+```
+
+3. Verify output file updates at `C:\RainmeterCollector\metrics.json`.
+
+> Note: Running as a service can reduce availability of some user-session/GPU sensors depending on driver and permissions. If sensor coverage is lower as a service, prefer Task Scheduler at user logon.
+
+### Minimal no-tools startup option
+
+You can also place a shortcut to the collector EXE in:
+
+`%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup`
+
+This is simple but less robust than Task Scheduler.
+
 ## Configuration
 
 Edit `src/RainmeterCollector/appsettings.json`:
