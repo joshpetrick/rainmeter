@@ -1,0 +1,90 @@
+{
+  "timestamp": "2026-01-01T12:00:00+00:00",
+  "system": {
+    "machineName": "DESKTOP-EXAMPLE",
+    "osVersion": "Microsoft Windows NT 10.0.22631.0",
+    "uptimeSeconds": 83452.2
+  },
+  "cpu": {
+    "name": "Intel Core i7-13700K",
+    "usageTotalPercent": 16.4,
+    "perCoreUsagePercent": [
+      { "name": "core1", "value": 11.2 },
+      { "name": "core2", "value": 18.3 }
+    ],
+    "temperatureC": 54.0,
+    "packageTemperatureC": 56.0,
+    "coreTemperaturesC": [
+      { "name": "core1", "value": 52.0 },
+      { "name": "core2", "value": 50.0 }
+    ],
+    "clocksMHz": [
+      { "name": "core1", "value": 5200 },
+      { "name": "core2", "value": 5200 }
+    ],
+    "powerWatts": 68.5,
+    "rawSensors": []
+  },
+  "gpu": [
+    {
+      "name": "NVIDIA GeForce RTX 4080",
+      "vendor": "NVIDIA",
+      "usagePercent": 22.1,
+      "coreUsagePercent": 22.1,
+      "memoryUsagePercent": 34.2,
+      "temperatureC": 48.0,
+      "memoryUsedMB": 2900,
+      "memoryTotalMB": 16384,
+      "coreClockMHz": 2565,
+      "memoryClockMHz": 11201,
+      "powerWatts": 145.0,
+      "fanRpm": 1040,
+      "rawSensors": []
+    }
+  ],
+  "memory": {
+    "totalMB": 32768,
+    "usedMB": 12452,
+    "availableMB": 20316,
+    "usagePercent": 38.0
+  },
+  "disks": [
+    {
+      "name": "System",
+      "mountPoint": "C:\\",
+      "totalGB": 1863,
+      "usedGB": 942,
+      "freeGB": 921,
+      "usagePercent": 50.56,
+      "readBytesPerSec": 123433,
+      "writeBytesPerSec": 238844,
+      "temperatureC": 41.0,
+      "temperaturesC": [
+        { "name": "Temperature", "value": 41.0 },
+        { "name": "Composite", "value": 43.0 }
+      ],
+      "rawSensors": []
+    }
+  ],
+  "network": [
+    {
+      "name": "Ethernet",
+      "bytesSentPerSec": 5216,
+      "bytesReceivedPerSec": 84832,
+      "ipAddresses": ["192.168.1.42", "fe80::1"]
+    }
+  ],
+  "motherboard": {
+    "temperatures": [
+      { "name": "ASUS ROG - VRM", "value": 52.0 }
+    ],
+    "voltages": [
+      { "name": "ASUS ROG - CPU VCore", "value": 1.24 }
+    ],
+    "rawSensors": []
+  },
+  "fans": [
+    { "name": "ASUS ROG - CPU Fan", "rpm": 910 }
+  ],
+  "allSensors": []
+}
