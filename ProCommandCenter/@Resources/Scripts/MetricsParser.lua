@@ -1,22 +1,12 @@
-local jsonText = ""
-
 local function readAll(path)
-    local f = io.open(path, "r")
-    if not f then
+    local file = io.open(path, "r")
+    if not file then
         return nil
     end
 
-    local content = f:read("*a")
-    f:close()
+    local content = file:read("*a")
+    file:close()
     return content
-end
-
-local function toNumber(raw)
-    if not raw or raw == "null" then
-        return nil
-    end
-
-    return tonumber(raw)
 end
 
 local function numberFrom(block, key)
@@ -27,10 +17,6 @@ local function numberFrom(block, key)
     local value = block:match('"' .. key .. '"%s*:%s*([%-]?%d+%.?%d*)')
     if value then
         return tonumber(value)
-    end
-
-    if block:match('"' .. key .. '"%s*:%s*null') then
-        return nil
     end
 
     return nil
@@ -44,6 +30,10 @@ local function stringFrom(block, key)
     return block:match('"' .. key .. '"%s*:%s*"(.-)"')
 end
 
+local function setVar(name, value)
+    SKIN:Bang("!SetVariable", name, tostring(value or ""))
+end
+
 local function formatNumber(value, decimals, suffix)
     if value == nil then
         return "N/A"
@@ -51,11 +41,22 @@ local function formatNumber(value, decimals, suffix)
 
     local fmt = "%0." .. tostring(decimals or 0) .. "f"
     local rendered = string.format(fmt, value)
-    if suffix then
-        return rendered .. suffix
+    return suffix and (rendered .. suffix) or rendered
+end
+
+local function formatBytesPerSec(value)
+    if value == nil then
+        return "N/A"
     end
 
-    return rendered
+    local abs = math.abs(value)
+    if abs >= 1024 * 1024 then
+        return string.format("%.2f MB/s", value / (1024 * 1024))
+    elseif abs >= 1024 then
+        return string.format("%.1f KB/s", value / 1024)
+    end
+
+    return string.format("%.0f B/s", value)
 end
 
 local function parseNamedValueArray(arrayText)
@@ -65,16 +66,58 @@ local function parseNamedValueArray(arrayText)
     end
 
     for item in arrayText:gmatch("%b{}") do
-        local name = stringFrom(item, "name") or "Unknown"
-        local value = numberFrom(item, "value")
-        table.insert(items, { name = name, value = value })
+        table.insert(items, {
+            name = stringFrom(item, "name") or "Unknown",
+            value = numberFrom(item, "value")
+        })
     end
 
     return items
 end
 
-local function setVar(name, value)
-    SKIN:Bang("!SetVariable", name, tostring(value or ""))
+local function coreSortKey(name)
+    local n = tonumber((name or ""):match("(%d+)$"))
+    return n or 9999
+end
+
+local function simplifyFanName(name, index)
+    if not name or name == "" then
+        return "Fan " .. tostring(index)
+    end
+
+    local simplified = name:match("%-%s*(.+)$")
+    if simplified and simplified ~= "" then
+        return simplified
+    end
+
+    return name
+end
+
+local function resetDefaults()
+    setVar("CpuUsage", "N/A")
+    setVar("CpuTemp", "N/A")
+    setVar("CpuCoreLines", "No per-core usage metrics")
+
+    setVar("GpuName", "NVIDIA GeForce RTX 4080 SUPER")
+    setVar("GpuUsage", "N/A")
+    setVar("GpuTemp", "N/A")
+
+    setVar("MemoryLine", "N/A")
+    setVar("MemoryPercent", "0")
+
+    setVar("DiskSummary", "No disk metrics")
+    for i = 1, 4 do
+        setVar("Disk" .. i .. "Name", "")
+        setVar("Disk" .. i .. "Line", "")
+        setVar("Disk" .. i .. "Percent", "0")
+    end
+
+    setVar("NetworkLine", "Ethernet: DL N/A | UL N/A")
+
+    for i = 1, 8 do
+        setVar("Fan" .. i .. "Name", "")
+        setVar("Fan" .. i .. "Rpm", "0")
+    end
 end
 
 local function parseCpu(cpuBlock)
@@ -82,30 +125,29 @@ local function parseCpu(cpuBlock)
     local temp = numberFrom(cpuBlock, "temperatureC")
 
     setVar("CpuUsage", formatNumber(usage, 0, "%"))
-    setVar("CpuTemp", formatNumber(temp, 0, "°C"))
+    setVar("CpuTemp", formatNumber(temp, 0, " C"))
 
-    local coreUsageArray = cpuBlock and cpuBlock:match('"perCoreUsagePercent"%s*:%s*(%b[])')
-    local coreTempArray = cpuBlock and cpuBlock:match('"coreTemperaturesC"%s*:%s*(%b[])')
-
-    local usages = parseNamedValueArray(coreUsageArray)
-    local temps = parseNamedValueArray(coreTempArray)
-    local tempByName = {}
-
-    for _, t in ipairs(temps) do
-        tempByName[t.name] = t.value
-    end
+    local usages = parseNamedValueArray(cpuBlock and cpuBlock:match('"perCoreUsagePercent"%s*:%s*(%b[])'))
+    table.sort(usages, function(a, b)
+        local ka = coreSortKey(a.name)
+        local kb = coreSortKey(b.name)
+        if ka == kb then
+            return (a.name or "") < (b.name or "")
+        end
+        return ka < kb
+    end)
 
     local lines = {}
+    local maxLines = tonumber(SKIN:ReplaceVariables("#MaxCoreLines#")) or 12
     for i, c in ipairs(usages) do
-        local t = tempByName[c.name]
-        table.insert(lines, string.format("%s: %s / %s", c.name, formatNumber(c.value, 0, "%"), formatNumber(t, 0, "°C")))
-        if i >= 24 then
+        lines[#lines + 1] = string.format("%s: %s", c.name, formatNumber(c.value, 0, "%"))
+        if i >= maxLines then
             break
         end
     end
 
     if #lines == 0 then
-        table.insert(lines, "No per-core usage metrics")
+        lines[1] = "No per-core usage metrics"
     end
 
     setVar("CpuCoreLines", table.concat(lines, "#CRLF#"))
@@ -114,9 +156,9 @@ end
 local function parseGpu(allText)
     local gpuArray = allText:match('"gpu"%s*:%s*(%b[])')
     local targetName = "NVIDIA GeForce RTX 4080 SUPER"
-    local selected = nil
+    local selected
+    local fallback
 
-    local fallback = nil
     if gpuArray then
         for obj in gpuArray:gmatch("%b{}") do
             local name = stringFrom(obj, "name")
@@ -130,43 +172,36 @@ local function parseGpu(allText)
         end
     end
 
+    selected = selected or fallback
     if not selected then
-        selected = fallback
-    end
-
-    if not selected then
-        setVar("GpuName", targetName)
-        setVar("GpuUsage", "N/A")
-        setVar("GpuTemp", "N/A")
         return
     end
 
-    local usage = numberFrom(selected, "coreUsagePercent")
-    local temp = numberFrom(selected, "temperatureC")
-
     setVar("GpuName", stringFrom(selected, "name") or targetName)
-    setVar("GpuUsage", formatNumber(usage, 0, "%"))
-    setVar("GpuTemp", formatNumber(temp, 0, "°C"))
+    setVar("GpuUsage", formatNumber(numberFrom(selected, "coreUsagePercent"), 0, "%"))
+    setVar("GpuTemp", formatNumber(numberFrom(selected, "temperatureC"), 0, " C"))
 end
 
-local function parseMemory(memBlock)
-    local total = numberFrom(memBlock, "totalMB")
-    local used = numberFrom(memBlock, "usedMB")
-    local available = numberFrom(memBlock, "availableMB")
-    local percent = numberFrom(memBlock, "usagePercent")
+local function parseMemory(memoryBlock)
+    local total = numberFrom(memoryBlock, "totalMB")
+    local used = numberFrom(memoryBlock, "usedMB")
+    local available = numberFrom(memoryBlock, "availableMB")
+    local percent = numberFrom(memoryBlock, "usagePercent")
 
     setVar("MemoryLine", string.format(
-        "Total %s GB | Used %s GB | Available %s GB | %s",
+        "Total %s GB | Used %s GB | Free %s GB | %s",
         formatNumber(total and (total / 1024), 1, ""),
         formatNumber(used and (used / 1024), 1, ""),
         formatNumber(available and (available / 1024), 1, ""),
         formatNumber(percent, 0, "%")
     ))
+    setVar("MemoryPercent", percent or 0)
 end
 
 local function parseDisks(allText)
     local diskArray = allText:match('"disks"%s*:%s*(%b[])')
     local lines = {}
+    local index = 0
 
     if diskArray then
         for obj in diskArray:gmatch("%b{}") do
@@ -176,104 +211,99 @@ local function parseDisks(allText)
             local free = numberFrom(obj, "freeGB")
             local percent = numberFrom(obj, "usagePercent")
 
-            table.insert(lines, string.format(
-                "%s: T %s | U %s | F %s | %s",
-                name,
-                formatNumber(total, 0, "GB"),
-                formatNumber(used, 0, "GB"),
-                formatNumber(free, 0, "GB"),
-                formatNumber(percent, 0, "%")
-            ))
+            lines[#lines + 1] = string.format("%s %s", name, formatNumber(percent, 0, "%"))
+
+            if index < 4 then
+                index = index + 1
+                setVar("Disk" .. index .. "Name", name)
+                setVar("Disk" .. index .. "Line", string.format("T %s  U %s  F %s", formatNumber(total, 0, "GB"), formatNumber(used, 0, "GB"), formatNumber(free, 0, "GB")))
+                setVar("Disk" .. index .. "Percent", percent or 0)
+            end
         end
     end
 
     if #lines == 0 then
-        table.insert(lines, "No disk metrics")
+        setVar("DiskSummary", "No disk metrics")
+    else
+        setVar("DiskSummary", table.concat(lines, " | "))
     end
 
-    setVar("DiskLines", table.concat(lines, "#CRLF#"))
+    for i = index + 1, 4 do
+        setVar("Disk" .. i .. "Name", "")
+        setVar("Disk" .. i .. "Line", "")
+        setVar("Disk" .. i .. "Percent", "0")
+    end
 end
 
 local function parseNetwork(allText)
     local netArray = allText:match('"network"%s*:%s*(%b[])')
-    local selected = nil
+    if not netArray then
+        return
+    end
 
-    if netArray then
-        for obj in netArray:gmatch("%b{}") do
-            local name = stringFrom(obj, "name")
-            if name == "Ethernet" then
-                selected = obj
-                break
-            end
+    local selected
+    for obj in netArray:gmatch("%b{}") do
+        local name = stringFrom(obj, "name")
+        if name == "Ethernet" then
+            selected = obj
+            break
         end
     end
 
-    local up, down
-    if selected then
-        up = numberFrom(selected, "bytesSentPerSec")
-        down = numberFrom(selected, "bytesReceivedPerSec")
+    if not selected then
+        return
     end
 
-    setVar("NetworkLine", string.format("Ethernet: ↓ %s/s | ↑ %s/s", formatNumber(down, 0, "B"), formatNumber(up, 0, "B")))
+    local up = numberFrom(selected, "bytesSentPerSec")
+    local down = numberFrom(selected, "bytesReceivedPerSec")
+    setVar("NetworkLine", string.format("Ethernet: DL %s | UL %s", formatBytesPerSec(down), formatBytesPerSec(up)))
 end
 
 local function parseFans(allText)
     local fanArray = allText:match('"fans"%s*:%s*(%b[])')
-    local idx = 0
+    local count = 0
 
     if fanArray then
         for obj in fanArray:gmatch("%b{}") do
-            idx = idx + 1
-            if idx > 8 then
+            count = count + 1
+            if count > 8 then
                 break
             end
 
-            local name = stringFrom(obj, "name") or ("Fan " .. tostring(idx))
+            local rawName = stringFrom(obj, "name")
             local rpm = numberFrom(obj, "rpm") or 0
-            setVar("Fan" .. idx .. "Name", name)
-            setVar("Fan" .. idx .. "Rpm", string.format("%0.0f", rpm))
+            setVar("Fan" .. count .. "Name", simplifyFanName(rawName, count))
+            setVar("Fan" .. count .. "Rpm", string.format("%.0f", rpm))
         end
     end
 
-    for i = idx + 1, 8 do
+    for i = count + 1, 8 do
         setVar("Fan" .. i .. "Name", "")
         setVar("Fan" .. i .. "Rpm", "0")
     end
 end
 
 function Initialize()
-    setVar("CpuUsage", "N/A")
-    setVar("CpuTemp", "N/A")
-    setVar("CpuCoreLines", "Loading...")
-    setVar("GpuName", "NVIDIA GeForce RTX 4080 SUPER")
-    setVar("GpuUsage", "N/A")
-    setVar("GpuTemp", "N/A")
-    setVar("MemoryLine", "Loading...")
-    setVar("DiskLines", "Loading...")
-    setVar("NetworkLine", "Loading...")
-    for i = 1, 8 do
-        setVar("Fan" .. i .. "Name", "")
-        setVar("Fan" .. i .. "Rpm", "0")
-    end
+    resetDefaults()
 end
 
 function Update()
     local path = SKIN:ReplaceVariables("#MetricsJsonPath#")
-    jsonText = readAll(path)
+    local jsonText = readAll(path)
+
+    resetDefaults()
+
     if not jsonText then
         setVar("CpuCoreLines", "metrics.json not found")
         setVar("MemoryLine", "metrics.json not found")
-        setVar("DiskLines", "metrics.json not found")
+        setVar("DiskSummary", "metrics.json not found")
         setVar("NetworkLine", "metrics.json not found")
         return 0
     end
 
-    local cpuBlock = jsonText:match('"cpu"%s*:%s*(%b{})')
-    local memoryBlock = jsonText:match('"memory"%s*:%s*(%b{})')
-
-    parseCpu(cpuBlock)
+    parseCpu(jsonText:match('"cpu"%s*:%s*(%b{})'))
     parseGpu(jsonText)
-    parseMemory(memoryBlock)
+    parseMemory(jsonText:match('"memory"%s*:%s*(%b{})'))
     parseDisks(jsonText)
     parseNetwork(jsonText)
     parseFans(jsonText)

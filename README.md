@@ -18,8 +18,8 @@ A clean, premium-style, dual-monitor-friendly dashboard with independent modules
   - GPU (`NVIDIA GeForce RTX 4080 SUPER`) core usage + temperature
   - Memory total/used/available/usage percent
   - Per-disk total/used/free/usage percent
-  - Ethernet upload/download throughput
-  - Fan list with RPM status coloring (<1000 black, >=1000 green)
+  - Ethernet upload/download throughput (normalized KB/s or MB/s)
+  - Fan list with simplified names and RPM status coloring (<1000 black, >=1000 green)
 - `SystemSpecs.ini`
   - Static hardware summary (editable)
 - `Weather.ini`
