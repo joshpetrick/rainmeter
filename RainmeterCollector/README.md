@@ -1,6 +1,6 @@
-# RainmeterCollector (Windows hardware metrics collector)
+# RainmeterCollector (Windows hardware metrics collector, .NET 10 target)
 
-RainmeterCollector is a lightweight .NET 8 console app for Windows 10/11 that polls hardware and OS metrics and writes a JSON file Rainmeter can consume.
+RainmeterCollector is a lightweight .NET 10 console app for Windows 10/11 that polls hardware and OS metrics and writes a JSON file Rainmeter can consume.
 
 ## What it collects
 
@@ -24,13 +24,18 @@ RainmeterCollector is a lightweight .NET 8 console app for Windows 10/11 that po
 - `SensorDebugDumper`: optional debug output of every discovered sensor.
 - Strongly typed JSON models in `Models/`.
 
+
+## Prerequisite
+
+- .NET SDK 10.x (project targets `net10.0-windows`)
+
 ## Build
 
 ```powershell
 cd RainmeterCollector
 # Restore packages
 dotnet restore .\src\RainmeterCollector\RainmeterCollector.csproj
-# Build release
+# Build release (targets net10.0-windows)
 dotnet build .\src\RainmeterCollector\RainmeterCollector.csproj -c Release
 ```
 
