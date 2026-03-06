@@ -14,13 +14,12 @@ This repository includes a modular Rainmeter dashboard focused on a polished, mi
 A clean, premium-style, dual-monitor-friendly dashboard with independent modules:
 
 - `SystemStats.ini`
-  - CPU usage
-  - CPU temperature
-  - GPU usage
-  - GPU temperature
-  - RAM usage
-  - Primary drive usage
-  - Network throughput
+  - CPU total usage + per-core usage + CPU temperature
+  - GPU (`NVIDIA GeForce RTX 4080 SUPER`) core usage + temperature
+  - Memory total/used/available/usage percent
+  - Per-disk total/used/free/usage percent
+  - Ethernet upload/download throughput
+  - Fan list with RPM status coloring (<1000 black, >=1000 green)
 - `SystemSpecs.ini`
   - Static hardware summary (editable)
 - `Weather.ini`
