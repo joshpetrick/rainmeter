@@ -1,4 +1,4 @@
-using Microsoft.VisualBasic.Devices;
+using System.Runtime.InteropServices;
 using RainmeterCollector.Models;
 
 namespace RainmeterCollector.Services;
@@ -7,9 +7,14 @@ public sealed class MemoryMetricsProvider
 {
     public MemoryMetrics GetMemoryMetrics()
     {
-        var computerInfo = new ComputerInfo();
-        var totalMb = computerInfo.TotalPhysicalMemory / 1024d / 1024d;
-        var availableMb = computerInfo.AvailablePhysicalMemory / 1024d / 1024d;
+        var memoryStatus = new MemoryStatusEx();
+        if (!GlobalMemoryStatusEx(ref memoryStatus))
+        {
+            return new MemoryMetrics();
+        }
+
+        var totalMb = memoryStatus.ullTotalPhys / 1024d / 1024d;
+        var availableMb = memoryStatus.ullAvailPhys / 1024d / 1024d;
         var usedMb = Math.Max(0, totalMb - availableMb);
 
         return new MemoryMetrics
@@ -19,5 +24,27 @@ public sealed class MemoryMetricsProvider
             UsedMB = Math.Round(usedMb, 2),
             UsagePercent = totalMb > 0 ? Math.Round(usedMb / totalMb * 100d, 2) : 0
         };
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool GlobalMemoryStatusEx(ref MemoryStatusEx lpBuffer);
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    private struct MemoryStatusEx
+    {
+        public uint dwLength;
+        public uint dwMemoryLoad;
+        public ulong ullTotalPhys;
+        public ulong ullAvailPhys;
+        public ulong ullTotalPageFile;
+        public ulong ullAvailPageFile;
+        public ulong ullTotalVirtual;
+        public ulong ullAvailVirtual;
+        public ulong ullAvailExtendedVirtual;
+
+        public MemoryStatusEx()
+        {
+            dwLength = (uint)Marshal.SizeOf<MemoryStatusEx>();
+        }
     }
 }
